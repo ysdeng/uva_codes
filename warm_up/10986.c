@@ -13,21 +13,28 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-struct Edge {
-	int a, b, w;
-} edge[50000];
+struct Node {
+	int a, dis;
+} node[50000];
+
+int heap_size;
+void insert(struct Node nodes);
+struct Node popout();
 
 bool visited[20000];
 int distance[20000];
-
+struct Node matrix[20000][20000];
+int count[20000];
 void dijkstra(int S);
 
 void init() {
-	int i;
+	int i, j;
 	for(i = 0; i < 20000; i++) {
 		visited[i] = false;
 		distance[i] = 2147483647;
+		count[i] = 0;
 	}
+	heap_size = 0;
 }
 
 
@@ -60,11 +67,18 @@ int main () {
 				there's an edge between a and b.
 				and its weight is w.
 			*/
-			scanf("%d%d%d", &edge[j].a, &edge[j].b, &edge[j].w);
+			int a, b, w;
+			scanf("%d%d%d", &a, &b, &w);
+
+			struct Node ed;
+			ed.a = b, ed.dis = w;
+			matrix[a][count[a]++] = ed;
+			ed.a = a;
+			matrix[b][count[b]++] = ed;
 
 		}
 		dijkstra(S);
-		// print result start with "i" not "i+1"
+		
 		printf("Case #%d: ", i);
 		if(distance[T] != 2147483647) printf("%d\n", distance[T]);
 		else puts("unreachable");
@@ -76,42 +90,85 @@ void dijkstra(int S) {
 	int i, j, k;
 	distance[S] = 0;
 
-	for(i = 0; i < n; i++)
+	for(i = 0; i < n; i++) {
 		visited[i] = false;
+	}
+
+	struct Node src;
+	src.a = S, src.dis = distance[S];
+	insert(src);
 
 	for(i = 0; i < n; i++) {
 		
 		int min_p = -1, min = 2147483647;
-		for (j = 0; j < n; j++) {
-			if (!visited[j] && distance[j] < min) {
-				min_p = j;
-				min = distance[j];
-			}
+
+		while(heap_size != 0) {
+			min_p = node[1].a;
+			if(!visited[min_p]) break;
+			struct Node a;
+			a = popout();
 		}
-		
+
 		if(min_p == -1) break;
 		visited[min_p] = true;
- 
-		for (j = 0; j < m; j++) {
-			if (edge[j].a == min_p) {
-				int out_node = edge[j].b, w = edge[j].w;
-
-				if (!visited[out_node] 
-					&& distance[min_p] + w < distance[out_node]) {
-					distance[out_node] = distance[min_p] + w;
-				}
-			}
-			else if (edge[j].b == min_p) {
-				int out_node = edge[j].a, w = edge[j].w;
-
-				if (!visited[out_node] 
-					&& distance[min_p] + w < distance[out_node]) {
-					distance[out_node] = distance[min_p] + w;
-				}
-			}
+		
+		for (j = 0; j < count[min_p]; j++) {
 			
-		}
-			
+			struct Node ed = matrix[min_p][j];
+			if (!visited[ed.a] && distance[min_p] + ed.dis < distance[ed.a])
+			{
+				distance[ed.a] = distance[min_p] + ed.dis;
+				struct Node addnode;
+				addnode.a = ed.a, addnode.dis = distance[ed.a];
+				insert(addnode);
+			}
+        }
+		
 	}
 
+}
+
+void insert(struct Node nodes){
+    int now = ++heap_size, p;
+    struct Node x;
+    node[heap_size] = nodes;
+
+    while(now > 1) {
+        p = now / 2;
+        if(node[now].dis - node[p].dis > 0) break;
+        
+        x = node[now];
+        node[now] = node[p];
+        node[p] = x;
+        
+        now = p;
+    }
+}
+
+struct Node popout(){
+    struct Node v = node[1], x;
+    int now, change;
+
+    node[1] = node[heap_size--];
+    now = 1;
+    while(now * 2 <= heap_size) {
+        int fb = 1;
+        if(node[2*now].dis - node[now].dis < 0)
+        	fb = 0;
+        else if((2 * now + 1)<= heap_size 
+        	&& node[2* now + 1].dis - node[now].dis < 0)
+        	fb = 0;
+        if(fb) break;
+        change = 2* now;
+        if((2 * now + 1) <= heap_size 
+        	&& node[2 * now + 1].dis - node[2 * now].dis < 0)
+        	change = 2 * now + 1;
+        
+        x = node[change];
+        node[change] = node[now];
+        node[now] = x;
+        
+        now = change;
+    }
+    return v;
 }
