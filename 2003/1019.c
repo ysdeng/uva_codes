@@ -69,16 +69,33 @@ int simulator() {
 	int i, j;
 	int success = 1;
 
-	for(j = 1; j >= 0; j--) {
-		for(i = j; i < 100; i++) {
-			if(i == 0) {
-				if(origin_bit[0] != final_bit[0]) {
-					switch_state[0] = 1;
-					origin_bit[0] = abs(origin_bit[0]-1);
-					origin_bit[1] = abs(origin_bit[1]-1);
-				}
-			}
-			else if(i == 99) {
+	int maxlen = 0;
+
+	for(i = 0; i < 100; i++) {
+		if(origin_bit[i] != 0 || final_bit[i] != 0) {
+			maxlen = i;
+			break;
+		}
+	}
+
+	if(maxlen == 99) {
+		if(origin_bit[99] == final_bit[99])
+			return 1;
+		else{
+			switch_state[99] = 1;
+			return 1;
+		}
+	}
+
+	for(j = 0; j < 2; j++) {
+		if(j == 1) {
+			switch_state[maxlen] = 1;
+			origin_bit[maxlen] = abs(origin_bit[maxlen]-1);
+			origin_bit[maxlen+1] = abs(origin_bit[maxlen+1]-1);
+		}
+		
+		for(i = maxlen+1; i < 100; i++) {
+			if(i == 99) {
 				if(origin_bit[98] != final_bit[98]) {
 					switch_state[99] = 1;
 					origin_bit[98] = abs(origin_bit[98]-1);
@@ -94,12 +111,14 @@ int simulator() {
 				}
 			}
 		}
+
 		success = 1;
 		for(i = 0; i < 100; i++) {
 			if(origin_bit[i] != final_bit[i])
 				success = 0;
 		}
 		if(success) break;
+
 	}
 
 	return success;
