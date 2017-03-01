@@ -3,19 +3,22 @@
 	use dijkstra algorithm to solve it.
 	there's a lot of node(2-20000).
 	cannot use adjacency matrix to store the graph.
-	and i found that edge is less then 0.5n^2.
-	so edge list may be a good idea.
-	QQ TLE!!!
-	use heap to optimize...
-	but i don't know how to implement
+	so use adjacency to store the graph
+	and use heap to speed up.
 */
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 struct Node {
 	int a, dis;
 } node[50000];
+
+struct Edge {
+	int to, dis;
+	struct Edge *next;
+};
 
 int heap_size;
 void insert(struct Node nodes);
@@ -23,8 +26,8 @@ struct Node popout();
 
 bool visited[20000];
 int distance[20000];
-struct Node matrix[20000][20000];
-int count[20000];
+struct Edge *matrix[20000];
+
 void dijkstra(int S);
 
 void init() {
@@ -32,7 +35,9 @@ void init() {
 	for(i = 0; i < 20000; i++) {
 		visited[i] = false;
 		distance[i] = 2147483647;
-		count[i] = 0;
+
+		matrix[i] = (struct Edge *)malloc(sizeof(struct Edge));
+		matrix[i]->next = NULL;
 	}
 	heap_size = 0;
 }
@@ -70,13 +75,28 @@ int main () {
 			int a, b, w;
 			scanf("%d%d%d", &a, &b, &w);
 
-			struct Node ed;
-			ed.a = b, ed.dis = w;
-			matrix[a][count[a]++] = ed;
-			ed.a = a;
-			matrix[b][count[b]++] = ed;
+			struct Edge *eda;
+			eda = (struct Edge *)malloc(sizeof(struct Edge));
+			eda->to = b, eda->dis = w;
+			eda->next = matrix[a]->next;
+			matrix[a]->next = eda;
+			
+			struct Edge *edb;
+			edb = (struct Edge *)malloc(sizeof(struct Edge));
+			edb->to = a, edb->dis = w;
+			edb->next = matrix[b]->next;
+			matrix[b]->next = edb;
 
 		}
+		/*
+		for(j = 0; j < n; j++) {
+			struct Edge *cur = matrix[j]->next;
+			while(cur != NULL) {
+				printf("%d -> %d, dis %d.\n", j, cur->to, cur->dis);
+				cur = cur->next;
+			}
+		}
+		*/
 		dijkstra(S);
 		
 		printf("Case #%d: ", i);
@@ -112,6 +132,7 @@ void dijkstra(int S) {
 		if(min_p == -1) break;
 		visited[min_p] = true;
 		
+		/*
 		for (j = 0; j < count[min_p]; j++) {
 			
 			struct Node ed = matrix[min_p][j];
@@ -123,11 +144,30 @@ void dijkstra(int S) {
 				insert(addnode);
 			}
         }
-		
+        */
+
+		struct Edge *current = matrix[min_p]->next;
+		while(current != NULL) {
+			int v, d;
+			v = current->to, d = current->dis;
+			if (!visited[v] && distance[min_p] + d < distance[v])
+			{
+				distance[v] = distance[min_p] + d;
+				struct Node addnode;
+				addnode.a = v, addnode.dis = distance[v];
+				insert(addnode);
+			}
+			current = current->next;
+		}
 	}
 
 }
-
+/*
+	heap part:
+	include two functions: insert and popout
+		-insert: add a new element into the heap
+		-popout: remove the smallest element from the heap
+*/
 void insert(struct Node nodes){
     int now = ++heap_size, p;
     struct Node x;
