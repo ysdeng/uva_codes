@@ -21,6 +21,9 @@ int row, col;
 
 void findEdge();
 
+bool Union(struct Edge e);
+int Find_set(int index);
+
 void init() {
 	edgecount = 0;
 
@@ -145,4 +148,23 @@ void findEdge() {
 			}
 		}
 	}
+}
+
+/* modify following part */
+bool Union(struct Edge e) {
+	int set_a = Find_set(e.a);
+    int set_b = Find_set(e.b);
+    if (set_a != set_b) {
+        pointset[set_a] = set_b;
+        distance[distance_size++] = e.dis;
+        return true;
+    }
+    return false;
+}
+
+int Find_set(int index) {
+	if (index == pointset[index])
+        return index;
+    pointset[index] = Find_set(pointset[index]);
+    return pointset[index];
 }
