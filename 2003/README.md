@@ -12,3 +12,7 @@ however, there are still some bugs that need to be figured out.
 problem 1019 ac  
 first, i cannot pollute the origin input  
 second, i need to initialize the switches' state each time  
+
+##20170303
+problem 1018 start
+this is a spacial case of MST
