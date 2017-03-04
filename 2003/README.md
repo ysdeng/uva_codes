@@ -16,3 +16,11 @@ Second, I need to initialize the switches' state each time
 ##20170303
 problem 1018 start:  
 This is a spacial case of MST  
+  
+##20170304
+problem 1018 re:
+I don't know what's wrong.  
+  
+problem 1018 ac:
+19:55  
+Be careful about the boundary.  
