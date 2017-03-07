@@ -10,12 +10,12 @@ However, there are still some bugs that need to be figured out.
   
 ##20170302
 problem 1019 ac:  
-First, I need to ensure the origin input is unpolluted  
-Second, I need to initialize the switches' state each time  
+First, I need to ensure the origin input is unpolluted.  
+Second, I need to initialize the switches' state each time.  
   
 ##20170303
 problem 1018 start:  
-This is a spacial case of MST  
+This is a spacial case of MST.  
   
 ##20170304
 problem 1018 re:  
@@ -24,3 +24,10 @@ I don't know what's wrong.
 problem 1018 ac:  
 19:55  
 Be careful about the boundary.  
+
+##20170304  
+problem 1021 start:  
+This is a simple simulation problem.  
+
+#20170307
+problem 1021 ac
