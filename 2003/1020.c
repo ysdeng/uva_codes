@@ -11,22 +11,28 @@
 int numsz[9]; /* how many 's' and 'z' in the map */
 int partition[9]; 
 int type[2187][2187];
+int unit[6561][6561];
+
 void init_para();
 
 int order;
-float input[2][2];
-float dist_func();
+double input[2][2];
+int c[2][2];
+double dist_func();
+void bridge_1(int m);
+int bridge_2(int x, int y, int type, int dir, int corder);
+int getLeftPart(int xx, int yy, int type, int dir);
 
 int main() {
 	init_para();
-	int testcaseNum = 1;
+	int testcaseNum = 0;
 	int i, j, k;
 	while(~scanf("%d", &order) && order != 0) {
 		for(i = 0; i < 2; i++)
-			scanf("%f%f", &input[i][0], &input[i][1]);
+			scanf("%lf%lf", &input[i][0], &input[i][1]);
 
-		//float dist = dist_func();
-		printf("Case %d.\n", testcaseNum++);
+		if(testcaseNum) puts("");
+		printf("Case %d.  Distance is %.4f\n", ++testcaseNum, dist_func());
 	}
 	return 0;
 }
@@ -37,6 +43,7 @@ void init_para() {
 		numsz[i] = pow(9, i-1);
 		partition[i] = (int)pow(3, i) - 1;
 	}
+
 	for(i = 0; i < 2187; i++) {
 		for(j = 0; j < 2187; j++) {
 			if(i%2 == 0) {
@@ -49,19 +56,11 @@ void init_para() {
 			}
 		}
 	}
-
-	/*
-	for(i = 0; i < 3; i++) {
-		for(j = 0; j < 3; j++) {
-			printf("%2d", type[i][j]);
-		}
-		puts("");
-	}
-	puts("i know the type.");
-	*/
+	
+	
 }
 
-float dist_func() {
+double dist_func() {
 	int i, j, k, l;
 	/* find connecting points */
 	int grid[2][2];
@@ -69,177 +68,108 @@ float dist_func() {
 	for (i = 0; i < 2; i++)
 		for(j = 0; j < 2; j++)
 			grid[i][j] = 0;
-
-	float gridnum = pow(3, order-1);
 	
-	float tmpf = 0.0;
-
-	
-	for(i = 0; i < 2; i++) {
-		for(j = 0; j < 2; j++) {
-			tmpf = 0.0;
-			tmpf = input[i][j] * pow(3, order-1);
-
-			if((tmpf - (int)tmpf) > 0.0) {
-				grid[i][j] = (int)tmpf;
-			}
-			else {
-				if((int)tmpf) grid[i][j] = (int)tmpf-1;
-				else grid[i][j] = 0;
-			}
-		}
-	}
-
-	/*
-	for (i = 0; i < 2; i++)
-		for(j = 0; j < 2; j++)
-			printf("%d\n", grid[i][j]);
-	printf("i know the grid's type.\n");
-	*/
+	double tmpf = 0.0;
 
 	/* connecting point */
-	int c[2][2];
+	
 	int checkp[2];
-	float mindis[2];
-	float len = 1 / partition[order];
-
+	double mindis[2];
+	
+	double len = 1.0 / partition[order];
 
 	for(i = 0; i < 2; i++) {
 		tmpf = input[i][0] * partition[order];
 		checkp[0] = (int)tmpf;
 		tmpf = input[i][1] * partition[order];
 		checkp[1] = (int)tmpf;
-
-		mindis[i] = 1.0*partition[order];
+		
+		mindis[i] = partition[order];
 
 		for(j = 0; j < 2; j++) {
 			for(k = 0; k < 2; k++) {
-				tmpf = sqrt(pow((input[i][0]*partition[order]-(checkp[0]+j)),2) + 
-					pow((input[i][1]*partition[order]-(checkp[1]+k)),2));
+				tmpf = sqrt(pow((input[i][0]*partition[order]-(checkp[0]+j)),2)
+						+ pow((input[i][1]*partition[order]-(checkp[1]+k)),2));
 				if(tmpf < mindis[i]) {
-					mindis[i] = tmpf/partition[order];
+					mindis[i] = tmpf;
 					c[i][0] = (checkp[0]+j);
 					c[i][1] = (checkp[1]+k);
 				}
 			}
 		}
+		mindis[i] /= partition[order];
 	}
-
 	/*
+	printf("%d %d\n", c[0][0], c[0][1]);
+	printf("%d %d\n", c[1][0], c[1][1]);
+	*/
+	double dis = 0.0;
  	for(i = 0; i < 2; i++) {
- 		printf("mindis = %.3f\n", mindis[i]);
- 		for(j = 0; j < 2; j++) {
- 			printf("%.3f ", (float)c[i][j]/partition[order]);
- 		}
- 		puts("");
+ 		dis += mindis[i];
  	}
- 	printf("i know the connecting point.\n");
- 	*/
 
- 	/* calculate complete s/z */
- 	int mid = (abs(grid[0][1] - grid[1][1]) -1) * pow(3, order-1);
- 	int lowpart, highpart;
- 	if(type[grid[0][0]][grid[0][1]] < 2) {
- 		lowpart = partition[order] - grid[0][0] - 1;
- 	}
- 	else lowpart = grid[0][0];
- 	if(type[grid[0][0]][grid[0][1]] < 2) {
- 		highpart = partition[order] - grid[0][0] - 1;
- 	}
- 	else highpart = grid[0][0];
+ 	int d1 = bridge_2(c[0][0], c[0][1], 1, 1, order);
+ 	int d2 = bridge_2(c[1][0], c[1][1], 1, 1, order);
+ 	/*
+ 	printf("d1 = %d\nd2 = %d\n", d1, d2);
+	*/
+ 	dis += (double)(abs(d2-d1)) * len;
+	
+	return dis;
+}
 
- 	/* calculate partial s/z */
- 	int partlen = 0;
- 	int typet[2];
- 	int typet[0] = type[grid[0][0]][grid[0][1]];
- 	int typet[1] = type[grid[1][0]][grid[1][1]];
- 	if(grid[0][0] == grid[1][0] && grid[0][1] == grid[1][1]) {
- 		/* in the same grid */
- 		if(typet[0] == 0) {
- 			/* *z */
- 			int dp[2], m;
- 			for(m = 0; m < 2; m++) {
- 				dp[m] = (c[m][0] % 3)+(c[m][1] % 3)*3;
- 				if(dp[m] == 3) dp[m] = 5;
- 				else if(dp[m] == 5) dp[m] = 3;
- 			}
- 			partlen = abs(dp[1] - dp[0]);
- 		}
- 		else if(typet[0] == 1) {
- 			/* *s */
- 			int dp[2], m;
- 			for(m = 0; m < 2; m++) {
- 				dp[m] = (c[m][0] % 3)+(c[m][1] % 3)*3;
- 				if(dp[m] == 3) dp[m] = 5;
- 				else if(dp[m] == 5) dp[m] = 3;
- 				if(dp[m] > 5) dp[m] -= 6;
- 				else if(dp[m] < 3) dp[m] += 6;
- 			}
- 			partlen = abs(dp[1] - dp[0]);
- 		}
- 		else if(typet[0] == 2) {
- 			/* s* */
- 			int dp[2], m;
- 			for(m = 0; m < 2; m++) {
- 				dp[m] = (c[m][0] % 3)+(c[m][1] % 3)*3;
- 				if(dp[m] == 3) dp[m] = 5;
- 				else if(dp[m] == 5) dp[m] = 3;
- 				if(dp[m] > 5) dp[m] -= 6;
- 				else if(dp[m] < 3) dp[m] += 6;
- 			}
- 			partlen = abs(dp[1] - dp[0]);
- 		}
- 		else if(typet[0] == 3) {
- 			/* z* */
- 			int dp[2], m;
- 			for(m = 0; m < 2; m++) {
- 				dp[m] = (c[m][0] % 3)+(c[m][1] % 3)*3;
- 				if(dp[m] == 3) dp[m] = 5;
- 				else if(dp[m] == 5) dp[m] = 3;
- 			}
- 			partlen = abs(dp[1] - dp[0]);
- 		}
- 	}
+int bridge_2(int x, int y, int type, int dir, int corder) {
+	/*
+		type 1: z, -1: s
+		dir  1: >, -1: <
+	*/
+ 	if(corder == 1) return getLeftPart(x, y, type, dir);
  	else {
- 		/* in different grid */
- 		for(i = 0; i < 2; i++) {
- 			if(typet[i] == 0) {
- 				/* *z */
-	 			int dp;
-	 			dp = (c[i][0] % 3)+(c[i][1] % 3)*3;
-	 			if(dp == 3) dp = 5;
-	 			else if(dp == 5) dp = 3;
-	 			partlen = abs(dp - 8);
- 			}
- 			else if(typet[i] == 1) {
- 				/* *s */
- 				int dp;
- 				dp = (c[i][0] % 3)+(c[i][1] % 3)*3;
- 				if(dp == 3) dp = 5;
- 				else if(dp == 5) dp = 3;
- 				if(dp > 5) dp -= 6;
- 				else if(dp < 3) dp += 6;
- 				partlen = abs(dp - 8);
- 			}
- 			else if(typet[i] == 2) {
- 				/* s* */
- 				int dp;
- 				dp = (c[i][0] % 3)+(c[i][1] % 3)*3;
- 				if(dp == 3) dp = 5;
- 				else if(dp == 5) dp = 3;
- 				if(dp > 5) dp -= 6;
- 				else if(dp < 3) dp += 6;
- 				partlen = abs(dp - 0);
- 			}
- 			else if(typet[i] == 3) {
- 				/* z* */
-	 			int dp;
-	 			dp = (c[i][0] % 3)+(c[i][1] % 3)*3;
-	 			if(dp == 3) dp = 5;
-	 			else if(dp == 5) dp = 3;
-	 			partlen = abs(dp - 0);
- 			}
- 		}
+ 		int x_pr = x%((int)pow(3, corder-1));
+ 		int y_pr = y%((int)pow(3, corder-1));
+ 		x /= (int)pow(3, corder-1);
+ 		y /= (int)pow(3, corder-1);
+ 		int left = getLeftPart(x, y, type, dir)*((int)pow(9, corder-1));
+ 		if((x%2) != (y%2)) type *= -1;
+ 		if(y%2) dir *= -1;
+ 		return bridge_2(x_pr, y_pr, type, dir, corder-1)
+ 			+ left;
  	}
-	return 0;
+}
+
+int getLeftPart(int xx, int yy, int type, int dir) {
+	/*
+		type 1: z, -1: s
+		dir  1: >, -1: <
+	*/
+	int dp = (xx % 3)+(yy % 3)*3;
+ 	if(type == 1 && dir == 1) {
+ 		/* *z */
+ 		if(dp == 3) dp = 5;
+	 	else if(dp == 5) dp = 3;
+	 	return dp;
+ 	}
+ 	else if(type == -1 && dir == 1) {
+ 		/* *s */
+ 		if(dp == 0) dp = 2;
+ 		else if(dp == 2) dp = 0;
+ 		else if(dp == 6) dp = 8;
+ 		else if(dp == 8) dp = 6;
+ 		return abs(dp-8);
+ 	}
+ 	else if(type == -1 && dir == -1) {
+ 		/* s* */
+ 		if(dp == 0) dp = 2;
+ 		else if(dp == 2) dp = 0;
+ 		else if(dp == 6) dp = 8;
+ 		else if(dp == 8) dp = 6;
+ 		return dp;
+ 	}
+ 	else if(type == 1 && dir == -1) {
+ 		/* z* */
+ 		if(dp == 3) dp = 5;
+	 	else if(dp == 5) dp = 3;
+	 	return abs(dp-8);
+ 	}
+ 	return 0;
 }
