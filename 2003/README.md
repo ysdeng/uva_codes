@@ -14,12 +14,12 @@ This is a spacial case of MST.
 Be careful about the boundary.  
   
 ##20170307
-problem 1021 ac
+problem 1021 ac  
 This is a simple simulation problem.  
   
 ##20170322  
 problem 1020 ac:  
-after a week... It's a simple recursive problem.  
+It's a simple recursive problem.  
   
 ##20170323  
 problem 1022 tle:  
@@ -30,7 +30,7 @@ problem 1022 tle:
 time complexity: v^5* ( vlg(v) + v^2)  
   
 ##20170328  
-problem 1025 ac:
+problem 1025 ac:  
 simple DP  
   
 ##problem 1024 wa:  

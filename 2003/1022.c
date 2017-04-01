@@ -122,6 +122,7 @@ int func() {
 	int i, j, k, l, m, n;
 	int offset_x, offset_y;
 	if(cover.area < hole.area) return 0;
+	
 	for(i = 0; i < hole_v_count; i++) {
 		for(j = 0; j < cover_v_count; j++) {
 			if(hole_vline[i].direction != cover_vline[j].direction)
