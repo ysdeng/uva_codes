@@ -42,6 +42,10 @@ Line hole_hline[60];		int hole_h_count;
 Line cover_vline[60];		int cover_v_count;
 Line cover_hline[60];		int cover_h_count;
 
+LineWithType hLine[200];
+LineWithType vLine[200];
+int hLineCount, vLineCount;
+
 Polygon hole, cover;
 
 void checkCounterClockwise();
@@ -106,7 +110,6 @@ int main () {
 		/* main function */
 		int success = func();
 		/* output */
-		if(testcase) puts("");
 		printf("Hole %d: ", ++testcase);
 		if(success) puts("Yes");
 		else puts("No");
@@ -118,6 +121,7 @@ int main () {
 int func() {
 	int i, j, k, l, m, n;
 	int offset_x, offset_y;
+	if(cover.area < hole.area) return 0;
 	for(i = 0; i < hole_v_count; i++) {
 		for(j = 0; j < cover_v_count; j++) {
 			if(hole_vline[i].direction != cover_vline[j].direction)
@@ -129,8 +133,37 @@ int func() {
 					if(hole_hline[k].direction != cover_hline[l].direction)
 						continue;
 					offset_y = hole_hline[k].y1 - cover_hline[l].y1;
+
+					/* switch cover */
+					for(m = 0; m < hLineCount; m++) {
+						if(hLine[m].type == 1) {
+							hLine[m].x1 -= offset_x; hLine[m].x2 -= offset_x;
+							hLine[m].y1 -= offset_y; hLine[m].y2 -= offset_y;
+						}
+					}
+					for(m = 0; m < vLineCount; m++) {
+						if(vLine[m].type == 1) {
+							vLine[m].x1 -= offset_x; vLine[m].x2 -= offset_x;
+							vLine[m].y1 -= offset_y; vLine[m].y2 -= offset_y;
+						}
+					}
+
 					int ps = planeSweeping(offset_x, offset_y);
 					if(ps == 1) return 1;
+
+					/* switch cover */
+					for(m = 0; m < hLineCount; m++) {
+						if(hLine[m].type == 1) {
+							hLine[m].x1 += offset_x; hLine[m].x2 += offset_x;
+							hLine[m].y1 += offset_y; hLine[m].y2 += offset_y;
+						}
+					}
+					for(m = 0; m < vLineCount; m++) {
+						if(vLine[m].type == 1) {
+							vLine[m].x1 += offset_x; vLine[m].x2 += offset_x;
+							vLine[m].y1 += offset_y; vLine[m].y2 += offset_y;
+						}
+					}
 				}
 			}
 		}
@@ -141,87 +174,6 @@ int func() {
 int planeSweeping(int offsetx, int offsety) {
 	int i, j, k;
 	int successCovered = 0;
-	for(i = 0; i < cover.p_count; i++) {
-		cover.point[i].x += offsetx;
-		cover.point[i].y += offsety;
-	}
-
-	LineWithType hLine[200];
-	LineWithType vLine[200];
-	int hLineCount, vLineCount;
-	hLineCount = vLineCount = 0;
-
-	for(i = 0; i < cover.p_count; i++) {
-		cover.point[i].x -= offsetx;
-		cover.point[i].y -= offsety;
-	}
-	/* build cover's edge agin */
-	for(i = 0; i < cover.p_count; i++) {
-		if(cover.point[i].x == cover.point[i+1].x) {
-			if(cover.point[i].y == cover.point[i+1].y)
-				continue;
-			/* vertical */
-			vLine[vLineCount].x1 = cover.point[i].x;
-			vLine[vLineCount].x2 = cover.point[i+1].x;
-			vLine[vLineCount].y1 = cover.point[i].y;
-			vLine[vLineCount].y2 = cover.point[i+1].y;
-			if(cover.point[i+1].y > cover.point[i].y)
-				vLine[vLineCount].direction = -1;
-			else
-				vLine[vLineCount].direction = 1;
-			vLine[vLineCount].type = 1;
-			vLineCount++;
-		}
-		else {
-			if(cover.point[i].x == cover.point[i+1].x)
-				continue;
-			/* horizon */
-			hLine[hLineCount].x1 = cover.point[i].x;
-			hLine[hLineCount].x2 = cover.point[i+1].x;
-			hLine[hLineCount].y1 = cover.point[i].y;
-			hLine[hLineCount].y2 = cover.point[i+1].y;
-			if(cover.point[i+1].x > cover.point[i].x)
-				hLine[hLineCount].direction = -1;
-			else
-				hLine[hLineCount].direction = 1;
-			hLine[hLineCount].type = 1;
-			hLineCount++;
-		}
-	}
-	/* build hole's edge agin */
-	for(i = 0; i < hole.p_count; i++) {
-		if(hole.point[i].x == hole.point[i+1].x) {
-			if(hole.point[i].y == hole.point[i+1].y)
-				continue;
-			/* vertical */
-			vLine[vLineCount].x1 = hole.point[i].x;
-			vLine[vLineCount].x2 = hole.point[i+1].x;
-			vLine[vLineCount].y1 = hole.point[i].y;
-			vLine[vLineCount].y2 = hole.point[i+1].y;
-			if(hole.point[i+1].y > hole.point[i].y)
-				vLine[vLineCount].direction = -1;
-			else
-				vLine[vLineCount].direction = 1;
-			vLine[vLineCount].type = -1;
-			vLineCount++;
-		}
-		else {
-			if(hole.point[i].x == hole.point[i+1].x)
-				continue;
-			/* horizon */
-			hLine[hLineCount].x1 = hole.point[i].x;
-			hLine[hLineCount].x2 = hole.point[i+1].x;
-			hLine[hLineCount].y1 = hole.point[i].y;
-			hLine[hLineCount].y2 = hole.point[i+1].y;
-			if(hole.point[i+1].x > hole.point[i].x)
-				hLine[hLineCount].direction = -1;
-			else
-				hLine[hLineCount].direction = 1;
-			hLine[hLineCount].type = -1;
-			hLineCount++;
-		}
-	}
-	/* finish edge building */
 	
 	/* sort vertical lines to do slicing */
 	qsort(vLine, vLineCount, sizeof(LineWithType),cmp_VL);
@@ -232,8 +184,14 @@ int planeSweeping(int offsetx, int offsety) {
 	int xx[200], xxCount;
 	xxCount = 0;
 	xx[0] = vLine[0].x1;
+	int hCount;
+	hCount = 0;
 	for(i = 1, xxCount = 1; i < vLineCount; i++) {
-		if(xx[xxCount-1] != vLine[i].x1)
+		if(vLine[i].type == -1) {
+			hCount++;
+			if(hCount == hole_v_count) break;
+		}
+		if(xx[xxCount-1] != vLine[i].x1 && hCount)
 			xx[xxCount++] = vLine[i].x1;
 	}
 	/* scan hLine per slice*/
@@ -261,17 +219,19 @@ void checkCounterClockwise() {
 	/* hole */
 	int i, j;
 	long long tmp_xy, tmp_yx;
+
+	hLineCount = vLineCount = 0;
+
 	tmp_xy = 0;
 	for(i = 0; i < hole.p_count; i++) {
 		tmp_xy += hole.point[i].x * hole.point[i+1].y;
-	}
-	tmp_yx = 0;
-	for(i = 0; i < hole.p_count; i++) {
-		tmp_yx += hole.point[i].y * hole.point[i+1].x;
+		tmp_xy -= hole.point[i].y * hole.point[i+1].x;
 	}
 	
-	hole.area = tmp_xy - tmp_yx;
+	hole.area = tmp_xy;
 	if(hole.area < 0) {
+		hole.area *= -1;
+		/*
 		Point tmp_point[60];
 		for(i = 0, j = hole.p_count; j >= 0; i++, j--) {
 			tmp_point[i] = hole.point[j];
@@ -279,50 +239,55 @@ void checkCounterClockwise() {
 		for(i = 0; i <= hole.p_count; i++) {
 			hole.point[i] = tmp_point[i];
 		}
+		*/
 	}
+
 	hole_v_count = hole_h_count = 0;
 	for(i = 0; i < hole.p_count; i++) {
 		if(hole.point[i].x == hole.point[i+1].x) {
 			/* vertical */
 			if(hole.point[i].y == hole.point[i+1].y)
 				continue;
-			hole_vline[hole_v_count].x1 = hole.point[i].x;
-			hole_vline[hole_v_count].x2 = hole.point[i+1].x;
-			hole_vline[hole_v_count].y1 = hole.point[i].y;
-			hole_vline[hole_v_count].y2 = hole.point[i+1].y;
+			vLine[vLineCount].x1 = hole_vline[hole_v_count].x1 = hole.point[i].x;
+			vLine[vLineCount].x2 = hole_vline[hole_v_count].x2 = hole.point[i+1].x;
+			vLine[vLineCount].y1 = hole_vline[hole_v_count].y1 = hole.point[i].y;
+			vLine[vLineCount].y2 = hole_vline[hole_v_count].y2 = hole.point[i+1].y;
 			if(hole.point[i+1].y > hole.point[i].y)
-				hole_vline[hole_v_count].direction = -1;
+				vLine[vLineCount].direction = hole_vline[hole_v_count].direction = -1;
 			else
-				hole_vline[hole_v_count].direction = 1;
-			hole_v_count++;
+				vLine[vLineCount].direction = hole_vline[hole_v_count].direction = 1;
+			
+			vLine[vLineCount].type = -1;
+			vLineCount++; hole_v_count++;
 		}
 		else {
 			/* horizon */
 			if(hole.point[i].x == hole.point[i+1].x)
 				continue;
-			hole_hline[hole_h_count].x1 = hole.point[i].x;
-			hole_hline[hole_h_count].x2 = hole.point[i+1].x;
-			hole_hline[hole_h_count].y1 = hole.point[i].y;
-			hole_hline[hole_h_count].y2 = hole.point[i+1].y;
+			hLine[hLineCount].x1 = hole_hline[hole_h_count].x1 = hole.point[i].x;
+			hLine[hLineCount].x2 = hole_hline[hole_h_count].x2 = hole.point[i+1].x;
+			hLine[hLineCount].y1 = hole_hline[hole_h_count].y1 = hole.point[i].y;
+			hLine[hLineCount].y2 = hole_hline[hole_h_count].y2 = hole.point[i+1].y;
 			if(hole.point[i+1].x > hole.point[i].x)
-				hole_hline[hole_h_count].direction = -1;
+				hLine[hLineCount].direction = hole_hline[hole_h_count].direction = -1;
 			else
-				hole_hline[hole_h_count].direction = 1;
-			hole_h_count++;
+				hLine[hLineCount].direction = hole_hline[hole_h_count].direction = 1;
+
+			hLine[hLineCount].type = -1;
+			hLineCount++; hole_h_count++;
 		}
 	}
 	/* cover */
 	tmp_xy = 0;
 	for(i = 0; i < cover.p_count; i++) {
 		tmp_xy += cover.point[i].x * cover.point[i+1].y;
-	}
-	tmp_yx = 0;
-	for(i = 0; i < cover.p_count; i++) {
-		tmp_yx += cover.point[i].y * cover.point[i+1].x;
+		tmp_xy -= cover.point[i].y * cover.point[i+1].x;
 	}
 	
-	cover.area = tmp_xy - tmp_yx;
+	cover.area = tmp_xy;
 	if(cover.area < 0) {
+		cover.area *= -1;
+		/*
 		Point tmp_point[60];
 		for(i = 0, j = cover.p_count; j >= 0; i++, j--) {
 			tmp_point[i] = cover.point[j];
@@ -330,36 +295,42 @@ void checkCounterClockwise() {
 		for(i = 0; i <= cover.p_count; i++) {
 			cover.point[i] = tmp_point[i];
 		}
+		*/
 	}
+
 	cover_v_count = cover_h_count = 0;
 	for(i = 0; i < cover.p_count; i++) {
 		if(cover.point[i].x == cover.point[i+1].x) {
 			if(cover.point[i].y == cover.point[i+1].y)
 				continue;
 			/* vertical */
-			cover_vline[cover_v_count].x1 = cover.point[i].x;
-			cover_vline[cover_v_count].x2 = cover.point[i+1].x;
-			cover_vline[cover_v_count].y1 = cover.point[i].y;
-			cover_vline[cover_v_count].y2 = cover.point[i+1].y;
+			vLine[vLineCount].x1 = cover_vline[cover_v_count].x1 = cover.point[i].x;
+			vLine[vLineCount].x2 = cover_vline[cover_v_count].x2 = cover.point[i+1].x;
+			vLine[vLineCount].y1 = cover_vline[cover_v_count].y1 = cover.point[i].y;
+			vLine[vLineCount].y2 = cover_vline[cover_v_count].y2 = cover.point[i+1].y;
 			if(cover.point[i+1].y > cover.point[i].y)
-				cover_vline[cover_v_count].direction = -1;
+				vLine[vLineCount].direction = cover_vline[cover_v_count].direction = -1;
 			else
-				cover_vline[cover_v_count].direction = 1;
-			cover_v_count++;
+				vLine[vLineCount].direction = cover_vline[cover_v_count].direction = 1;
+
+			vLine[vLineCount].type = 1;
+			vLineCount++; cover_v_count++;
 		}
 		else {
 			if(cover.point[i].x == cover.point[i+1].x)
 				continue;
 			/* horizon */
-			cover_hline[cover_h_count].x1 = cover.point[i].x;
-			cover_hline[cover_h_count].x2 = cover.point[i+1].x;
-			cover_hline[cover_h_count].y1 = cover.point[i].y;
-			cover_hline[cover_h_count].y2 = cover.point[i+1].y;
+			hLine[hLineCount].x1 = cover_hline[cover_h_count].x1 = cover.point[i].x;
+			hLine[hLineCount].x2 = cover_hline[cover_h_count].x2 = cover.point[i+1].x;
+			hLine[hLineCount].y1 = cover_hline[cover_h_count].y1 = cover.point[i].y;
+			hLine[hLineCount].y2 = cover_hline[cover_h_count].y2 = cover.point[i+1].y;
 			if(cover.point[i+1].x > cover.point[i].x)
-				cover_hline[cover_h_count].direction = -1;
+				hLine[hLineCount].direction = cover_hline[cover_h_count].direction = -1;
 			else
-				cover_hline[cover_h_count].direction = 1;
-			cover_h_count++;
+				hLine[hLineCount].direction = cover_hline[cover_h_count].direction = 1;
+
+			hLine[hLineCount].type = 1;
+			hLineCount++; cover_h_count++;
 		}
 	}
 }
