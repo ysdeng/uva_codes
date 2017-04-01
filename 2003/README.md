@@ -33,4 +33,5 @@ time complexity: v^5* ( vlg(v) + v^2)
 problem 1025 ac:  
 simple DP  
   
-##problem 1024 wa:  
+##problem 1024 ac:  
+simple, tedious

@@ -73,7 +73,7 @@ int main () {
 			
 			if(op[0] == 'D') {
 				char Dname[9]; int Dvalue;
-				scanf("%s%d", Dname, &Dvalue);
+				scanf("%s%x", Dname, &Dvalue);
 				bool existed = false;
 				for(i = 0; i < symbolsCount; i++) {
 					if(strcmp(Dname, symbols[i].name) == 0) {
