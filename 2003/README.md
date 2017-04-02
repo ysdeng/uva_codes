@@ -34,4 +34,8 @@ problem 1025 ac:
 simple DP  
   
 ##problem 1024 ac:  
-simple, tedious
+simple, tedious  
+  
+##problem 1026 ac:  
+simple math, binary search  
+  

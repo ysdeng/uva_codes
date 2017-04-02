@@ -10,14 +10,14 @@ typedef struct {
 	int value;
 	int duplicate;
 } Symbol;
-Symbol symbols[128];
+Symbol symbols[200];
 int symbolsCount;
 
 typedef struct {
 	int start;
-	int refs[512];
+	int refs[600];
 	int refsCount;
-	unsigned short bytes[8192];
+	unsigned short bytes[9000];
 	int bytesCount;
 } Object;
 Object objects[1024];
