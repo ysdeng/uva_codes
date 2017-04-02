@@ -1,10 +1,10 @@
 #Record
 
-##20170301 
+##20170301  
 Practice big_num_divisionAndMultiplication.c  
 The file is a part of problem 1019.  
   
-##20170302
+##20170302  
 problem 1019 ac:  
 First, I need to ensure the origin input is unpolluted.  
 Second, I need to initialize the switches' state each time.  
@@ -13,7 +13,7 @@ problem 1018 ac:
 This is a spacial case of MST.  
 Be careful about the boundary.  
   
-##20170307
+##20170307  
 problem 1021 ac  
 This is a simple simulation problem.  
   
@@ -38,4 +38,3 @@ simple, tedious
   
 ##problem 1026 ac:  
 simple math, binary search  
-  
