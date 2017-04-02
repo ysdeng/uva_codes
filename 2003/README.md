@@ -18,8 +18,7 @@ This is a simple simulation problem.
 ## problem 1020 ac  
 It's a simple recursive problem.  
   
-## 20170323  
-problem 1022 tle:  
+## problem 1022 tle  
 1. find edge: (v/4)^2 * (v/4)^2  
 2. move cover to contact hole: v  
 3. sort all x & y: vlg(v)  
