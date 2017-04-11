@@ -81,8 +81,11 @@ void dijkstra() {
 
 			if(min_p < 26) d = min+1;
 			else {
+				d = min + ((min-1) / 19) + 1;
+				/*
 				d = max(min + 1, min * 20/19 - 5);
 				while (d - (d + 19) / 20 < min) ++d;
+				*/
 			}
 
 			if(!visited[j] && d < distance[j]) {
