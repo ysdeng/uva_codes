@@ -25,7 +25,6 @@ int main () {
 			if(sweep >= area) sweep -= area;
 			else break;
 		}
-		
 		double leftBoundary = 0, rightBoundary = 2*PI, phi;
 		for( i = 0; i < 50; i++) {
 			phi = (leftBoundary + rightBoundary) / 2;

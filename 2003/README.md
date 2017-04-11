@@ -33,3 +33,6 @@ simple, tedious
   
 ## problem 1026 ac  
 simple math, binary search  
+  
+## problem 1027 ac  
+MST, be careful about variable weight  
