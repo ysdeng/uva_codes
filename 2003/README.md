@@ -18,12 +18,8 @@ This is a simple simulation problem.
 ## problem 1020 ac  
 It's a simple recursive problem.  
   
-## problem 1022 tle  
-1. find edge: (v/4)^2 * (v/4)^2  
-2. move cover to contact hole: v  
-3. sort all x & y: vlg(v)  
-4. plane sweeping: v^2  
-time complexity: v^5* ( vlg(v) + v^2)  
+## problem 1022 ac  
+use plain sweeping to solve this problem  
   
 ## problem 1025 ac  
 simple DP  
