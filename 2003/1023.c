@@ -26,6 +26,7 @@ void CompressResultTree(Node* n);
 void printNode(Node* n);
 void BinaryToString();
 int globalCount;
+void destroyNode(Node* n);
 
 int main() {
 	int i, j, k;
@@ -53,6 +54,8 @@ int main() {
 		globalCount = 0;
 		printNode(treeResult);
 		BinaryToString();
+		destroyNode(treeOne);
+		destroyNode(treeTwo);
 		if(testCase) puts("");
 		printf("Image %d:\n", ++testCase);
 		int dd = 0;
@@ -214,7 +217,7 @@ void BuildResultTree(Node* n1, Node* n2, Node* nR) {
 
 void CompressResultTree(Node* n) {
 	/* checkPure */
-	int p;
+	int p, i;
 	p = 1;
 	for(i = 0; i < 4; i++)
 		p = p & n->node[i]->pure;
@@ -288,4 +291,16 @@ void printNode(Node* n) {
 	int i;
 	for(i = 0; i < 4; i++)
 		printNode(n->node[i]);
+}
+void destroyNode(Node* n) {
+	int i;
+	for(i = 0; i < 4; i++) {
+		if(n->node[i] != NULL) {
+			if(n->node[i]->pure == 1) {
+				free(n->node[i]);
+			}
+			else
+				destroyNode(n->node[i]);
+		}
+	}
 }

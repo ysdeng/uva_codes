@@ -1,337 +1,366 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
-#define min(x,y) (((x)>(y))?(y):(x))
-#define max(x,y) (((x)<(y))?(y):(x))
-
+int holePointCount, coverPointCount;
 typedef struct {
 	int x, y;
 } Point;
+
+Point holep[55], coverp[55];
+
 typedef struct {
-	int x1, x2;
-	int y1, y2;
-	int direction;
-	/*
-		+1	up	, right
-		-1	down, left	
-	*/
-} Line;
-typedef struct {
-	int x1, x2;
-	int y1, y2;
-	int direction;
-	/*
-		+1	up	, right
-		-1	down, left	
-	*/
+	int x1, y1, x2, y2;
 	int type;
 	/*
-		+1	Cover
-		-1	Hole
+		1: vertical	y2 > y1
+		2: vertical	y2 < y1
+		3: horizon	x2 < x1
+		4: horizon	x2 > x1
 	*/
-} LineWithType;
+} Edge;
+
+Edge holeEdge[55], coverEdge[55], tmpEdge[55];
+
 typedef struct {
-	Point point[60];	int p_count;
-	long long area;
-} Polygon;
+	int hv, cv, hh, ch;
+} MatchIndex;
 
-/* foliowing 4 lines are for contact edges */
-Line hole_vline[60];		int hole_v_count;
-Line hole_hline[60];		int hole_h_count;
-Line cover_vline[60];		int cover_v_count;
-Line cover_hline[60];		int cover_h_count;
+MatchIndex match[26*26*26*26];
+int matchCount;
 
-LineWithType hLine[200];
-LineWithType vLine[200];
-int hLineCount, vLineCount;
+int x_offset, y_offset;
 
-Polygon hole, cover;
+typedef struct {
+	int x, y;
+	int hORc;
+	/*
+		0: hole
+		1: cover
+	*/
+} PointWithType;
 
-void checkCounterClockwise();
-/* 
-	calculate the area 
-	and change the direction to counterclockwise
-*/
-
-int func();
-int planeSweeping(int offsetx, int offsety);
-
-int cmp_VL(const void *pa,const void *pb) {
-	
-	LineWithType *a = (LineWithType *)pa;
-	LineWithType *b = (LineWithType *)pb;
-
-	int xa, xb;
-	xa = a->x1;
-	xb = b->x1;
-	return (xa < xb) ? -1 : 1;
-}
-int cmp_HL(const void *pa,const void *pb) {
-	LineWithType *a = (LineWithType *)pa;
-	LineWithType *b = (LineWithType *)pb;
-
-	int ya, yb;
-	ya = a->y1;
-	yb = b->y1;
-
-	if(ya > yb) return 1;
-	else if(ya < yb) return -1;
-	else {
-		int typea, typeb, dira, dirb;
-		typea = a->type;
-		typeb = b->type;
-		dira = a->direction;
-		dirb = b->direction;
-		if(dira == dirb) {
-			return (typea > typeb) ? -1: 1;
-		}
-		else return (dira > dirb) ? 1: -1;
-	}
-}
+void computeEdges();
+void findMatchEdges();
+int matchLegalChecking(int cur);
+	int isOverlaped(int h1, int h2, int c1, int c2);
+void moveHoleEdges(int x, int y);
+int slicingAlgorithm();
+	int cmpSX(const void *a, const void *b);
+int plainSweeping(int x);
+	int isInside(int n, int a, int b);
+	int cmpFY(const void *a, const void *b);
 
 int main () {
 	int testcase = 0;
 	int i, j, k, l;
-	while(2 ==scanf("%d%d", &hole.p_count, &cover.p_count)) {
-		if(hole.p_count == 0 && cover.p_count == 0) break;
+	int cur;
+	int islegal, isCovered;
 
-		/* read input */
-		for(i = 0; i < hole.p_count; i++)
-			scanf("%d%d", &hole.point[i].x, &hole.point[i].y);
-		hole.point[hole.p_count] = hole.point[0];
-		for(i = 0; i < cover.p_count; i++)
-			scanf("%d%d", &cover.point[i].x, &cover.point[i].y);
-		cover.point[cover.p_count] = cover.point[0];
+	while(1) {
+		scanf("%d%d", &holePointCount, &coverPointCount);
+		if(holePointCount == 0 && coverPointCount == 0) break;
 
-		/* both cover and hole convert to CounterClockwise */
-		checkCounterClockwise();
-		
-		/* main function */
-		int success = func();
+		for(i = 1; i <= holePointCount; i++)
+			scanf("%d%d", &holep[i].x, &holep[i].y);
+		for(i = 1; i <= coverPointCount; i++)
+			scanf("%d%d", &coverp[i].x, &coverp[i].y);
+
+		computeEdges();
+
+		findMatchEdges();
+
+		cur = 0;
+		isCovered = 0;
+		while(1) {
+			cur++;
+			if(cur == matchCount) break;
+
+			islegal = matchLegalChecking(cur);
+			if(islegal == 0) continue;
+
+			moveHoleEdges(x_offset, y_offset);
+			isCovered = slicingAlgorithm();
+			if(isCovered == 1)
+				break;	
+		}
+
 		/* output */
 		printf("Hole %d: ", ++testcase);
-		if(success) puts("Yes");
+		if(isCovered) puts("Yes");
 		else puts("No");
-		
+
 	}
 	return 0;
 }
 
-int func() {
-	int i, j, k, l, m, n;
-	int offset_x, offset_y;
-	if(cover.area < hole.area) return 0;
-	
-	for(i = 0; i < hole_v_count; i++) {
-		for(j = 0; j < cover_v_count; j++) {
-			if(hole_vline[i].direction != cover_vline[j].direction)
+void computeEdges () {
+	int i;
+	for(i = 1; i <= holePointCount; i++) {
+		holeEdge[i].x1 = holep[i].x, holeEdge[i].y1 = holep[i].y;
+		if(i == holePointCount)
+			holeEdge[i].x2 = holep[1].x, holeEdge[i].y2 = holep[1].y;
+		else
+			holeEdge[i].x2 = holep[i+1].x, holeEdge[i].y2 = holep[i+1].y;
+
+		if(holeEdge[i].x1 == holeEdge[i].x2)
+			holeEdge[i].type = (holeEdge[i].y2 > holeEdge[i].y1)? 1: 2;
+		else
+			holeEdge[i].type = (holeEdge[i].x2 > holeEdge[i].x1)? 4: 3;
+	}
+	for(i = 1; i <= coverPointCount; i++) {
+		coverEdge[i].x1 = coverp[i].x, coverEdge[i].y1 = coverp[i].y;
+		if(i == coverPointCount)
+			coverEdge[i].x2 = coverp[1].x, coverEdge[i].y2 = coverp[1].y;
+		else
+			coverEdge[i].x2 = coverp[i+1].x, coverEdge[i].y2 = coverp[i+1].y;
+
+		if(coverEdge[i].x1 == coverEdge[i].x2)
+			coverEdge[i].type = (coverEdge[i].y2 > coverEdge[i].y1)? 1: 2;
+		else
+			coverEdge[i].type = (coverEdge[i].x2 > coverEdge[i].x1)? 4: 3;
+	}
+}
+
+void findMatchEdges () {
+	int i, j, k, l;
+	int pointer = 1;
+
+	for(i = 1; i <= holePointCount; i++) {
+		if(holeEdge[i].type > 2)
+			continue;
+		for(j = 1; j <= coverPointCount; j++) {
+			if(coverEdge[j].type > 2)
 				continue;
-			offset_x = hole_vline[i].x1 - cover_vline[j].x1;
-			
-			for(k = 0; k < hole_h_count; k++) {
-				for(l = 0; l < cover_h_count; l++) {
-					if(hole_hline[k].direction != cover_hline[l].direction)
+			if(coverEdge[j].type != holeEdge[i].type)
+				continue;
+			for(k = 1; k <= holePointCount; k++) {
+				if(holeEdge[k].type < 3)
+					continue;
+				for(l = 1; l <= coverPointCount; l++) {
+					if(coverEdge[l].type < 3)
 						continue;
-					offset_y = hole_hline[k].y1 - cover_hline[l].y1;
-
-					/* switch cover */
-					for(m = 0; m < hLineCount; m++) {
-						if(hLine[m].type == 1) {
-							hLine[m].x1 -= offset_x; hLine[m].x2 -= offset_x;
-							hLine[m].y1 -= offset_y; hLine[m].y2 -= offset_y;
-						}
-					}
-					for(m = 0; m < vLineCount; m++) {
-						if(vLine[m].type == 1) {
-							vLine[m].x1 -= offset_x; vLine[m].x2 -= offset_x;
-							vLine[m].y1 -= offset_y; vLine[m].y2 -= offset_y;
-						}
-					}
-
-					int ps = planeSweeping(offset_x, offset_y);
-					if(ps == 1) return 1;
-
-					/* switch cover */
-					for(m = 0; m < hLineCount; m++) {
-						if(hLine[m].type == 1) {
-							hLine[m].x1 += offset_x; hLine[m].x2 += offset_x;
-							hLine[m].y1 += offset_y; hLine[m].y2 += offset_y;
-						}
-					}
-					for(m = 0; m < vLineCount; m++) {
-						if(vLine[m].type == 1) {
-							vLine[m].x1 += offset_x; vLine[m].x2 += offset_x;
-							vLine[m].y1 += offset_y; vLine[m].y2 += offset_y;
-						}
-					}
+					if(coverEdge[l].type != holeEdge[k].type)
+						continue;
+					match[pointer].hv = i;
+					match[pointer].cv = j;
+					match[pointer].hh = k;
+					match[pointer].ch = l;
+					pointer++;
 				}
 			}
 		}
 	}
+
+	matchCount = pointer;
+}
+
+int matchLegalChecking (int cur) {
+	int hv, cv, hh, ch;
+	hv = match[cur].hv;
+	cv = match[cur].cv;
+	hh = match[cur].hh;
+	ch = match[cur].ch;
+
+	x_offset = coverEdge[cv].x1 - holeEdge[hv].x1;
+	y_offset = coverEdge[ch].y1 - holeEdge[hh].y1;
+
+	if(isOverlaped(holeEdge[hh].x1 + x_offset, holeEdge[hh].x2 + x_offset, coverEdge[ch].x1, coverEdge[ch].x2) == 1
+	&& isOverlaped(holeEdge[hv].y1 + y_offset, holeEdge[hv].y2 + y_offset, coverEdge[cv].y1, coverEdge[cv].y2) == 1)
+		return 1;
+
 	return 0;
 }
 
-int planeSweeping(int offsetx, int offsety) {
-	int i, j, k;
-	int successCovered = 0;
-	
-	/* sort vertical lines to do slicing */
-	qsort(vLine, vLineCount, sizeof(LineWithType),cmp_VL);
-	/* sort horizon lines to know the top-down order */
-	qsort(hLine, hLineCount, sizeof(LineWithType),cmp_HL);
-	
-	/* extract all x for slicing boundary*/
-	int xx[200], xxCount;
-	xxCount = 0;
-	xx[0] = vLine[0].x1;
-	int hCount;
-	hCount = 0;
-	for(i = 1, xxCount = 1; i < vLineCount; i++) {
-		if(vLine[i].type == -1) {
-			hCount++;
-			if(hCount == hole_v_count) break;
-		}
-		if(xx[xxCount-1] != vLine[i].x1 && hCount)
-			xx[xxCount++] = vLine[i].x1;
-	}
-	/* scan hLine per slice*/
-	bool coverInt = 0, holeInt = 0;
-	/* -1: empty, 1: nonempty */
-	successCovered = 1;
-	
-	/* the boundary is xx[i] to xx[i+1] */
-	for(i = 0; i < xxCount-1; i++) {
-		for(j = 0; j < hLineCount; j++) {
-			if(min( hLine[j].x1, hLine[j].x2) <= xx[i] &&
-				max( hLine[j].x1, hLine[j].x2) >= xx[i+1]) {
-				if(hLine[j].type == 1) coverInt = !coverInt;
-				else holeInt = !holeInt;
-			}
-			if(coverInt == false && holeInt == true) {
-				return 0;
-			}
-		}
-	}
-	return successCovered;
+int isOverlaped (int h1, int h2, int c1, int c2) {
+	int hMin = (h1 > h2)? h2 : h1; 
+	int hMax = (h1 > h2)? h1 : h2;
+	int cMin = (c1 > c2)? c2 : c1;
+	int cMax = (c1 > c2)? c1 : c2;
+
+	if(cMin >= hMax || hMin >= cMax) return 0;
+	else return 1;
 }
 
-void checkCounterClockwise() {
-	/* hole */
-	int i, j;
-	long long tmp_xy, tmp_yx;
+void moveHoleEdges (int x, int y) {
+	int i;
 
-	hLineCount = vLineCount = 0;
-
-	tmp_xy = 0;
-	for(i = 0; i < hole.p_count; i++) {
-		tmp_xy += hole.point[i].x * hole.point[i+1].y;
-		tmp_xy -= hole.point[i].y * hole.point[i+1].x;
+	for(i = 1; i <= holePointCount; i++) {
+		tmpEdge[i].x1 = holeEdge[i].x1 + x_offset;
+		tmpEdge[i].y1 = holeEdge[i].y1 + y_offset;
+		tmpEdge[i].x2 = holeEdge[i].x2 + x_offset;
+		tmpEdge[i].y2 = holeEdge[i].y2 + y_offset;
+		tmpEdge[i].type = holeEdge[i].type;
 	}
-	
-	hole.area = tmp_xy;
-	if(hole.area < 0) {
-		hole.area *= -1;
-		/*
-		Point tmp_point[60];
-		for(i = 0, j = hole.p_count; j >= 0; i++, j--) {
-			tmp_point[i] = hole.point[j];
-		}
-		for(i = 0; i <= hole.p_count; i++) {
-			hole.point[i] = tmp_point[i];
-		}
-		*/
+}
+
+int cmpSX (const void *a, const void *b) {
+	PointWithType *c = (PointWithType *)a;
+	PointWithType *d = (PointWithType *)b;
+
+	return (c->x - d->x);
+}
+
+int slicingAlgorithm () {
+	int i, j, k;
+	PointWithType slicePoint[150];
+	int slicePointCount = 0;
+	int flag;
+
+	/* find slicing points X */
+	for(i = 1; i <= holePointCount; i++) {
+		if(tmpEdge[i].type < 3)
+			continue;
+		slicePoint[slicePointCount].x = tmpEdge[i].x1;
+		slicePoint[slicePointCount].hORc = 0;
+		slicePointCount++;
+	}
+	for(i = 1; i <= coverPointCount; i++) {
+		if(coverEdge[i].type < 3)
+			continue;
+		slicePoint[slicePointCount].x = coverEdge[i].x1;
+		slicePoint[slicePointCount].hORc = 1;
+		slicePointCount++;
 	}
 
-	hole_v_count = hole_h_count = 0;
-	for(i = 0; i < hole.p_count; i++) {
-		if(hole.point[i].x == hole.point[i+1].x) {
-			/* vertical */
-			if(hole.point[i].y == hole.point[i+1].y)
-				continue;
-			vLine[vLineCount].x1 = hole_vline[hole_v_count].x1 = hole.point[i].x;
-			vLine[vLineCount].x2 = hole_vline[hole_v_count].x2 = hole.point[i+1].x;
-			vLine[vLineCount].y1 = hole_vline[hole_v_count].y1 = hole.point[i].y;
-			vLine[vLineCount].y2 = hole_vline[hole_v_count].y2 = hole.point[i+1].y;
-			if(hole.point[i+1].y > hole.point[i].y)
-				vLine[vLineCount].direction = hole_vline[hole_v_count].direction = -1;
-			else
-				vLine[vLineCount].direction = hole_vline[hole_v_count].direction = 1;
-			
-			vLine[vLineCount].type = -1;
-			vLineCount++; hole_v_count++;
+	/* sort slicing point X */
+	qsort(slicePoint, slicePointCount, sizeof(slicePoint[0]), cmpSX);
+
+	/*
+		if hole's leftest edge < cover's leftest edge,
+		than must can't cover
+	*/
+	if((slicePoint[0].x != slicePoint[1].x)
+		&& (slicePoint[0].hORc == 0))
+		return 0; 
+	if((slicePoint[slicePointCount-1].x != slicePoint[slicePointCount-2].x)
+		&& (slicePoint[slicePointCount-1].hORc == 0))
+		return 0;
+
+	/*
+		before do sliceing,
+		only need to slice the part that hole contained
+	*/
+	int mini = 150, maxi = 0;
+	for(i = 0; i < slicePointCount; i++) {
+		if(slicePoint[i].hORc == 0) {
+			if(i < mini) mini = i;
+			if(i > maxi) maxi = i;
+		}
+	}
+
+	/* do slicing and plain sweeping */
+	for(i = mini; i < maxi; i++) {
+		/* the last slicing point needn't check */
+		if(i > 0 && slicePoint[i].x == slicePoint[i-1].x)
+			continue;
+		flag = plainSweeping(slicePoint[i].x);
+		if(flag == 1) return 0;
+	}
+
+	if(flag == 0) return 1;
+	else return 0;
+}
+
+int isInside (int n, int a, int b) {
+	int Min = (a > b)? b: a;
+	int Max = (a > b)? a: b;
+
+	if(n < Min || n >= Max) return 0;
+	else return 1;
+}
+
+int cmpFY (const void *a, const void *b) {
+	PointWithType *c = (PointWithType *)a;
+	PointWithType *d = (PointWithType *)b;
+
+	if(c->y != d->y) return (c->y - d->y);
+	else return (c->hORc - d->hORc);
+}
+
+int plainSweeping (int x) {
+	/* if fail return 1 */
+	int i, j, k;
+	PointWithType fragment[150];
+	int fragmentCount = 0;
+
+	/* find sweeping points Y */
+	for(i = 1; i <= holePointCount; i++) {
+		if(tmpEdge[i].type > 2) {
+			if(1 == isInside(x, tmpEdge[i].x1, tmpEdge[i].x2)) {
+				fragment[fragmentCount].y = tmpEdge[i].y1;
+				fragment[fragmentCount].hORc = 0;
+				fragmentCount++;
+			}
+		}
+	}
+
+	for(i = 1; i <= coverPointCount; i++) {
+		if(coverEdge[i].type > 2) {
+			if(1 == isInside(x, coverEdge[i].x1, coverEdge[i].x2)) {
+				fragment[fragmentCount].y = coverEdge[i].y1;
+				fragment[fragmentCount].hORc = 1;
+				fragmentCount++;
+			}
+		}
+	}
+
+	/* sort sweeping points Y */
+	qsort(fragment, fragmentCount, sizeof(fragment[0]), cmpFY);
+
+	/* sort for the same Y */
+	int hInOut = 0; /* 0: In 1: Out */
+	int cInOut = 0;
+	for(i = 0; i < fragmentCount; i++) {
+		if(fragment[i].hORc == 1) {
+			fragment[i].x = hInOut;
+			hInOut = (hInOut)? 0: 1;
 		}
 		else {
-			/* horizon */
-			if(hole.point[i].x == hole.point[i+1].x)
-				continue;
-			hLine[hLineCount].x1 = hole_hline[hole_h_count].x1 = hole.point[i].x;
-			hLine[hLineCount].x2 = hole_hline[hole_h_count].x2 = hole.point[i+1].x;
-			hLine[hLineCount].y1 = hole_hline[hole_h_count].y1 = hole.point[i].y;
-			hLine[hLineCount].y2 = hole_hline[hole_h_count].y2 = hole.point[i+1].y;
-			if(hole.point[i+1].x > hole.point[i].x)
-				hLine[hLineCount].direction = hole_hline[hole_h_count].direction = -1;
-			else
-				hLine[hLineCount].direction = hole_hline[hole_h_count].direction = 1;
-
-			hLine[hLineCount].type = -1;
-			hLineCount++; hole_h_count++;
+			fragment[i].x = cInOut;
+			cInOut = (cInOut)? 0: 1;
 		}
 	}
-	/* cover */
-	tmp_xy = 0;
-	for(i = 0; i < cover.p_count; i++) {
-		tmp_xy += cover.point[i].x * cover.point[i+1].y;
-		tmp_xy -= cover.point[i].y * cover.point[i+1].x;
-	}
-	
-	cover.area = tmp_xy;
-	if(cover.area < 0) {
-		cover.area *= -1;
-		/*
-		Point tmp_point[60];
-		for(i = 0, j = cover.p_count; j >= 0; i++, j--) {
-			tmp_point[i] = cover.point[j];
+
+	PointWithType temp;
+	for(i = 1; i < fragmentCount; i++) {
+		if(fragment[i].y == fragment[i-1].y) {
+			if(fragment[i-1].x == 1) ;
+			else {
+				temp = fragment[i];
+				fragment[i] = fragment[i-1];
+				fragment[i-1] = temp;
+			}
 		}
-		for(i = 0; i <= cover.p_count; i++) {
-			cover.point[i] = tmp_point[i];
-		}
-		*/
 	}
 
-	cover_v_count = cover_h_count = 0;
-	for(i = 0; i < cover.p_count; i++) {
-		if(cover.point[i].x == cover.point[i+1].x) {
-			if(cover.point[i].y == cover.point[i+1].y)
-				continue;
-			/* vertical */
-			vLine[vLineCount].x1 = cover_vline[cover_v_count].x1 = cover.point[i].x;
-			vLine[vLineCount].x2 = cover_vline[cover_v_count].x2 = cover.point[i+1].x;
-			vLine[vLineCount].y1 = cover_vline[cover_v_count].y1 = cover.point[i].y;
-			vLine[vLineCount].y2 = cover_vline[cover_v_count].y2 = cover.point[i+1].y;
-			if(cover.point[i+1].y > cover.point[i].y)
-				vLine[vLineCount].direction = cover_vline[cover_v_count].direction = -1;
-			else
-				vLine[vLineCount].direction = cover_vline[cover_v_count].direction = 1;
-
-			vLine[vLineCount].type = 1;
-			vLineCount++; cover_v_count++;
+	/* start sweeping */
+	int flagH = 0;
+	int flagC = 0;
+	int FLAG = 0;
+	for(i = 0; i < fragmentCount; i++) {
+		if(fragment[i].hORc == 1) {
+			if(flagC == 0) {
+				if(flagH == 1) FLAG = 1;
+				else flagC = 1;
+			}
+			else {
+				if(flagH == 1) FLAG = 1;
+				else flagC = 0;
+			}
 		}
 		else {
-			if(cover.point[i].x == cover.point[i+1].x)
-				continue;
-			/* horizon */
-			hLine[hLineCount].x1 = cover_hline[cover_h_count].x1 = cover.point[i].x;
-			hLine[hLineCount].x2 = cover_hline[cover_h_count].x2 = cover.point[i+1].x;
-			hLine[hLineCount].y1 = cover_hline[cover_h_count].y1 = cover.point[i].y;
-			hLine[hLineCount].y2 = cover_hline[cover_h_count].y2 = cover.point[i+1].y;
-			if(cover.point[i+1].x > cover.point[i].x)
-				hLine[hLineCount].direction = cover_hline[cover_h_count].direction = -1;
-			else
-				hLine[hLineCount].direction = cover_hline[cover_h_count].direction = 1;
-
-			hLine[hLineCount].type = 1;
-			hLineCount++; cover_h_count++;
+			if(flagH == 0) {
+				if(flagC == 0) FLAG = 1;
+				else flagH = 1;
+			}
+			else {
+				if(flagC == 0) FLAG = 1;
+				else flagH = 0;
+			}
 		}
+		if(FLAG) break;
 	}
+
+	if(FLAG) return 1;
+	else return 0;
 }
