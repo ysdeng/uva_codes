@@ -26,7 +26,6 @@ void CompressResultTree(Node* n);
 void printNode(Node* n);
 void BinaryToString();
 int globalCount;
-void destroyNode(Node* n);
 
 int main() {
 	int i, j, k;
@@ -54,8 +53,6 @@ int main() {
 		globalCount = 0;
 		printNode(treeResult);
 		BinaryToString();
-		destroyNode(treeOne);
-		destroyNode(treeTwo);
 		if(testCase) puts("");
 		printf("Image %d:\n", ++testCase);
 		int dd = 0;
@@ -156,6 +153,7 @@ void BuildTree(Node* n, int index) {
 			while(n->node[i] == NULL)
 				n->node[i] = (Node*)malloc(sizeof(Node));
 		}
+		
 		for(i = 0; i < 4; i++)
 			BuildTree((n->node[i]), index);
 		
@@ -173,10 +171,8 @@ void BuildResultTree(Node* n1, Node* n2, Node* nR) {
 			while(nR->node[i] == NULL)
 				nR->node[i] = (Node*)malloc(sizeof(Node));
 		}
-
-		for(i = 0; i < 4; i++) {
+		for(i = 0; i < 4; i++)
 			BuildResultTree(n1->node[i], n2->node[i], nR->node[i]);
-		}
 		
 	}
 
@@ -217,43 +213,44 @@ void BuildResultTree(Node* n1, Node* n2, Node* nR) {
 
 void CompressResultTree(Node* n) {
 	/* checkPure */
-	int p, i;
-	p = 1;
-	for(i = 0; i < 4; i++)
-		p = p & n->node[i]->pure;
-
-	if(p == 1) {
-		n->pure = 1;
-		for(i = 0; i < 2; i++) {
-			if(n->node[0]->pure == i && n->node[1]->pure == i
-			&& n->node[2]->pure == i && n->node[3]->pure == i) {
-				n->color = i;
-				return;
-			}
+	if(n->node[0]->pure == 1 && n->node[1]->pure == 1
+		&& n->node[2]->pure == 1 && n->node[3]->pure == 1) {
+		if(n->node[0]->color == 0 && n->node[1]->color == 0
+			&& n->node[2]->color == 0 && n->node[3]->color == 0) {
+			n->color = 0;
+			n->pure = 1;
+			return;
 		}
+		if(n->node[0]->color == 1 && n->node[1]->color == 1
+			&& n->node[2]->color == 1 && n->node[3]->color == 1) {
+			n->color = 1;
+			n->pure = 1;
+			return;
+		}
+		return;
 	}
 
-	for(i = 0; i < 4; i++) {
+	int i;
+	for(i = 0; i < 4; i++)
 		if(n->node[i]->pure == 0)
 			CompressResultTree(n->node[i]);
-	}
 
 	/* checkPure */
-	p = 1;
-	for(i = 0; i < 4; i++)
-		p = p & n->node[i]->pure;
-
-	if(p == 1) {
-		n->pure = 1;
-		for(i = 0; i < 2; i++) {
-			if(n->node[0]->pure == i && n->node[1]->pure == i
-			&& n->node[2]->pure == i && n->node[3]->pure == i) {
-				n->color = i;
-				return;
-			}
+	if(n->node[0]->pure == 1 && n->node[1]->pure == 1
+		&& n->node[2]->pure == 1 && n->node[3]->pure == 1) {
+		if(n->node[0]->color == 0 && n->node[1]->color == 0
+			&& n->node[2]->color == 0 && n->node[3]->color == 0) {
+			n->color = 0;
+			n->pure = 1;
+			return;
+		}
+		if(n->node[0]->color == 1 && n->node[1]->color == 1
+			&& n->node[2]->color == 1 && n->node[3]->color == 1) {
+			n->color = 1;
+			n->pure = 1;
+			return;
 		}
 	}
-
 }
 
 void BinaryToString() {
@@ -287,20 +284,7 @@ void printNode(Node* n) {
 		Result[globalCount++] = n->color;
 		return;
 	}
-
 	int i;
 	for(i = 0; i < 4; i++)
 		printNode(n->node[i]);
-}
-void destroyNode(Node* n) {
-	int i;
-	for(i = 0; i < 4; i++) {
-		if(n->node[i] != NULL) {
-			if(n->node[i]->pure == 1) {
-				free(n->node[i]);
-			}
-			else
-				destroyNode(n->node[i]);
-		}
-	}
 }
