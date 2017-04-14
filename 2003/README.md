@@ -32,3 +32,6 @@ simple math, binary search
   
 ## problem 1027 ac  
 MST, be careful about variable weight  
+
+## problem 1023 ac  
+recursive, quad tree  
