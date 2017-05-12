@@ -8,8 +8,8 @@ use a array to record carl's route, and use it to update the map's newest direct
 simulation problem
 
 ## problem 1031  
-brute force, use some cut to make it faster
-time limite is 6 sec
+brute force, use some cut to make it faster  
+time limite is 6 sec   
 
 ## problem 1032  
 relabel, and fill table  
