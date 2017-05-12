@@ -1,3 +1,7 @@
 *.out
 test.c
 test.cpp
+*.sh
+*.cc
+*.cpp
+
