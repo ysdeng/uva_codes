@@ -12,4 +12,9 @@ brute force, use some cut to make it faster
 time limite is 6 sec   
 
 ## problem 1032  
-relabel, and fill table  
+simple problem  
+sort nx, nr records seperately  
+union nx, nr records seperately  
+> plain sweeping
+find diff sets  
+> plain sweeping
