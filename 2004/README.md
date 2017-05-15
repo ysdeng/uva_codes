@@ -15,6 +15,6 @@ time limite is 6 sec
 simple problem  
 sort nx, nr records seperately  
 union nx, nr records seperately  
-- plain sweeping  
+- plain sweeping
 find diff sets  
-- plain sweeping  
+- plain sweeping
